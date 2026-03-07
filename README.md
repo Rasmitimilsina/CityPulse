@@ -1,20 +1,40 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+CityPulse – Civic Awareness & Issue Reporting Platform
 
-# Run and deploy your AI Studio app
+Overview
 
-This contains everything you need to run your app locally.
+CityPulse is a civic engagement platform designed to improve communication between citizens and city departments. The app allows residents to report local issues such as potholes, broken streetlights, and trash dumping directly on a map while also providing real-time awareness of city-related news.
 
-View your app in AI Studio: https://ai.studio/apps/3f2937ce-32d3-4750-b9c3-255230418203
+Using automated data collection from Bright Data MCP, the platform analyzes recent news mentioning the City of Montgomery and highlights key topics such as government activity, crime trends, and economic updates. This helps citizens stay informed while encouraging community participation in solving urban problems.
 
-## Run Locally
+Problem
 
-**Prerequisites:**  Node.js
+Many city issues go unresolved because citizens do not have an easy way to report problems or stay informed about local developments.
+
+Solution
+
+CityPulse provides a simple platform where users can:
+Report issues directly on a map
+Upload photos and descriptions
+Track city problems in real time
+View news insights related to city conditions
+
+Key Features
+
+Map-based issue reporting
+Photo upload for evidence
+Automated local news monitoring
+Category-based issue tracking (crime, infrastructure, sanitation)
+Department dashboard for city authorities
+
+Technologies Used
+
+Frontend: Web Interface
+Backend: Node.js (Express)
+Database: SQLite (better-sqlite3)
+Data Collection: Bright Data MCP
+Maps Integration: Map-based issue reporting
 
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Impact
+
+CityPulse helps bridge the gap between citizens and local government by making urban issues visible, trackable, and actionable.
