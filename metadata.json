@@ -1,0 +1,5 @@
+{
+  "name": "Incident Analysis Dashboard",
+  "description": "A technical dashboard for analyzing and grouping incident data by location and type.",
+  "requestFramePermissions": []
+}

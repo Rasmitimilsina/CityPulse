@@ -1,0 +1,452 @@
+[
+  {
+    "type": "Drugs / Alcohol",
+    "latitude": 32.3889,
+    "longitude": -86.2622,
+    "location": "North East"
+  },
+  {
+    "type": "Assault",
+    "latitude": 32.3323,
+    "longitude": -86.2553,
+    "location": "East Montgomery"
+  },
+  {
+    "type": "Larceny",
+    "latitude": 32.3539,
+    "longitude": -86.3414,
+    "location": "West Montgomery"
+  },
+  {
+    "type": "Robbery",
+    "latitude": 32.415,
+    "longitude": -86.3014,
+    "location": "North Montgomery"
+  },
+  {
+    "type": "Robbery",
+    "latitude": 32.38,
+    "longitude": -86.3431,
+    "location": "West Montgomery"
+  },
+  {
+    "type": "Fraud",
+    "latitude": 32.3717,
+    "longitude": -86.2739,
+    "location": "East Central"
+  },
+  {
+    "type": "Drugs / Alcohol",
+    "latitude": 32.3845,
+    "longitude": -86.2734,
+    "location": "East Central"
+  },
+  {
+    "type": "Chest pain (non-trauma)",
+    "latitude": 32.4003,
+    "longitude": -86.3372,
+    "location": "North West"
+  },
+  {
+    "type": "Disturbing Peace",
+    "latitude": 32.3936,
+    "longitude": -86.3025,
+    "location": "North Central"
+  },
+  {
+    "type": "Psychological / behavior issue",
+    "latitude": 32.3389,
+    "longitude": -86.295,
+    "location": "Cloverdale"
+  },
+  {
+    "type": "Lift assist",
+    "latitude": 32.3192,
+    "longitude": -86.3235,
+    "location": "South Montgomery"
+  },
+  {
+    "type": "Burglary",
+    "latitude": 32.3475,
+    "longitude": -86.2628,
+    "location": "East Montgomery"
+  },
+  {
+    "type": "Assault",
+    "latitude": 32.3428,
+    "longitude": -86.3077,
+    "location": "South Central"
+  },
+  {
+    "type": "Disturbing Peace",
+    "latitude": 32.3371,
+    "longitude": -86.3288,
+    "location": "South Montgomery"
+  },
+  {
+    "type": "Motor Vehicle Theft",
+    "latitude": 32.4103,
+    "longitude": -86.2961,
+    "location": "North Montgomery"
+  },
+  {
+    "type": "Robbery",
+    "latitude": 32.4036,
+    "longitude": -86.277,
+    "location": "North Montgomery"
+  },
+  {
+    "type": "Fall",
+    "latitude": 32.3475,
+    "longitude": -86.3299,
+    "location": "West Montgomery"
+  },
+  {
+    "type": "Cardiac arrest",
+    "latitude": 32.3815,
+    "longitude": -86.3188,
+    "location": "Downtown"
+  },
+  {
+    "type": "Assault",
+    "latitude": 32.3556,
+    "longitude": -86.2505,
+    "location": "East Montgomery"
+  },
+  {
+    "type": "Chest pain (non-trauma)",
+    "latitude": 32.4075,
+    "longitude": -86.285,
+    "location": "North Montgomery"
+  },
+  {
+    "type": "Motor Vehicle Theft",
+    "latitude": 32.3619,
+    "longitude": -86.3062,
+    "location": "Garden District"
+  },
+  {
+    "type": "Chest pain (non-trauma)",
+    "latitude": 32.3425,
+    "longitude": -86.2982,
+    "location": "Cloverdale"
+  },
+  {
+    "type": "Lift assist",
+    "latitude": 32.3407,
+    "longitude": -86.3379,
+    "location": "West Montgomery"
+  },
+  {
+    "type": "Robbery",
+    "latitude": 32.3721,
+    "longitude": -86.3275,
+    "location": "Downtown"
+  },
+  {
+    "type": "Fire / smoke alarm",
+    "latitude": 32.3423,
+    "longitude": -86.3162,
+    "location": "South Central"
+  },
+  {
+    "type": "Psychological / behavior issue",
+    "latitude": 32.3745,
+    "longitude": -86.2912,
+    "location": "Downtown"
+  },
+  {
+    "type": "Larceny",
+    "latitude": 32.4058,
+    "longitude": -86.327,
+    "location": "North Montgomery"
+  },
+  {
+    "type": "Assault",
+    "latitude": 32.3559,
+    "longitude": -86.328,
+    "location": "West Montgomery"
+  },
+  {
+    "type": "Homicide",
+    "latitude": 32.3379,
+    "longitude": -86.3429,
+    "location": "West Montgomery"
+  },
+  {
+    "type": "Lift assist",
+    "latitude": 32.4158,
+    "longitude": -86.2869,
+    "location": "North Montgomery"
+  },
+  {
+    "type": "Sick case",
+    "latitude": 32.367,
+    "longitude": -86.3271,
+    "location": "Downtown"
+  },
+  {
+    "type": "Larceny",
+    "latitude": 32.3251,
+    "longitude": -86.2595,
+    "location": "South Montgomery"
+  },
+  {
+    "type": "Fraud",
+    "latitude": 32.3207,
+    "longitude": -86.264,
+    "location": "South Montgomery"
+  },
+  {
+    "type": "Motor Vehicle Theft",
+    "latitude": 32.327,
+    "longitude": -86.3429,
+    "location": "South Montgomery"
+  },
+  {
+    "type": "Sick case",
+    "latitude": 32.3787,
+    "longitude": -86.3262,
+    "location": "Downtown"
+  },
+  {
+    "type": "Drugs / Alcohol",
+    "latitude": 32.3952,
+    "longitude": -86.2831,
+    "location": "North Central"
+  },
+  {
+    "type": "Disturbing Peace",
+    "latitude": 32.3582,
+    "longitude": -86.3286,
+    "location": "West Montgomery"
+  },
+  {
+    "type": "Breathing problems",
+    "latitude": 32.3224,
+    "longitude": -86.3368,
+    "location": "South Montgomery"
+  },
+  {
+    "type": "Drugs / Alcohol",
+    "latitude": 32.3542,
+    "longitude": -86.2564,
+    "location": "East Montgomery"
+  },
+  {
+    "type": "Motor vehicle collision",
+    "latitude": 32.4156,
+    "longitude": -86.2929,
+    "location": "North Montgomery"
+  },
+  {
+    "type": "Motor vehicle collision",
+    "latitude": 32.3689,
+    "longitude": -86.3027,
+    "location": "Downtown"
+  },
+  {
+    "type": "Cardiac arrest",
+    "latitude": 32.4131,
+    "longitude": -86.2715,
+    "location": "North Montgomery"
+  },
+  {
+    "type": "Larceny",
+    "latitude": 32.4021,
+    "longitude": -86.2693,
+    "location": "North Montgomery"
+  },
+  {
+    "type": "Burglary",
+    "latitude": 32.3171,
+    "longitude": -86.331,
+    "location": "South Montgomery"
+  },
+  {
+    "type": "Fire / smoke alarm",
+    "latitude": 32.3881,
+    "longitude": -86.3403,
+    "location": "West Montgomery"
+  },
+  {
+    "type": "Chest pain (non-trauma)",
+    "latitude": 32.3842,
+    "longitude": -86.3069,
+    "location": "North Central"
+  },
+  {
+    "type": "Drugs / Alcohol",
+    "latitude": 32.3697,
+    "longitude": -86.3076,
+    "location": "Downtown"
+  },
+  {
+    "type": "Breathing problems",
+    "latitude": 32.3427,
+    "longitude": -86.3033,
+    "location": "South Central"
+  },
+  {
+    "type": "Disturbing Peace",
+    "latitude": 32.3801,
+    "longitude": -86.2771,
+    "location": "Downtown"
+  },
+  {
+    "type": "Chest pain (non-trauma)",
+    "latitude": 32.3272,
+    "longitude": -86.2827,
+    "location": "South Montgomery"
+  },
+  {
+    "type": "Vandalism",
+    "latitude": 32.3595,
+    "longitude": -86.2516,
+    "location": "East Montgomery"
+  },
+  {
+    "type": "Cardiac arrest",
+    "latitude": 32.3614,
+    "longitude": -86.3402,
+    "location": "West Montgomery"
+  },
+  {
+    "type": "Motor vehicle collision",
+    "latitude": 32.4114,
+    "longitude": -86.3097,
+    "location": "North Montgomery"
+  },
+  {
+    "type": "Psychological / behavior issue",
+    "latitude": 32.4036,
+    "longitude": -86.3161,
+    "location": "North Montgomery"
+  },
+  {
+    "type": "Motor Vehicle Theft",
+    "latitude": 32.3423,
+    "longitude": -86.2638,
+    "location": "East Montgomery"
+  },
+  {
+    "type": "Disturbing Peace",
+    "latitude": 32.3661,
+    "longitude": -86.3251,
+    "location": "Downtown"
+  },
+  {
+    "type": "Burglary",
+    "latitude": 32.3339,
+    "longitude": -86.331,
+    "location": "South Montgomery"
+  },
+  {
+    "type": "Robbery",
+    "latitude": 32.4073,
+    "longitude": -86.3051,
+    "location": "North Montgomery"
+  },
+  {
+    "type": "Vandalism",
+    "latitude": 32.4031,
+    "longitude": -86.3078,
+    "location": "North Montgomery"
+  },
+  {
+    "type": "Disturbing Peace",
+    "latitude": 32.3458,
+    "longitude": -86.3221,
+    "location": "South Central"
+  },
+  {
+    "type": "Robbery",
+    "latitude": 32.3799,
+    "longitude": -86.325,
+    "location": "Downtown"
+  },
+  {
+    "type": "Drugs / Alcohol",
+    "latitude": 32.3769,
+    "longitude": -86.2577,
+    "location": "East Montgomery"
+  },
+  {
+    "type": "Breathing problems",
+    "latitude": 32.3313,
+    "longitude": -86.3057,
+    "location": "South Montgomery"
+  },
+  {
+    "type": "Larceny",
+    "latitude": 32.3923,
+    "longitude": -86.2639,
+    "location": "North East"
+  },
+  {
+    "type": "Fire / smoke alarm",
+    "latitude": 32.3699,
+    "longitude": -86.295,
+    "location": "Downtown"
+  },
+  {
+    "type": "Motor vehicle collision",
+    "latitude": 32.3939,
+    "longitude": -86.3449,
+    "location": "West Montgomery"
+  },
+  {
+    "type": "Homicide",
+    "latitude": 32.369,
+    "longitude": -86.2501,
+    "location": "East Montgomery"
+  },
+  {
+    "type": "Motor vehicle collision",
+    "latitude": 32.3161,
+    "longitude": -86.2664,
+    "location": "South Montgomery"
+  },
+  {
+    "type": "Motor vehicle collision",
+    "latitude": 32.3484,
+    "longitude": -86.2531,
+    "location": "East Montgomery"
+  },
+  {
+    "type": "Motor Vehicle Theft",
+    "latitude": 32.3179,
+    "longitude": -86.2574,
+    "location": "South Montgomery"
+  },
+  {
+    "type": "Larceny",
+    "latitude": 32.4089,
+    "longitude": -86.2651,
+    "location": "North Montgomery"
+  },
+  {
+    "type": "Disturbing Peace",
+    "latitude": 32.4039,
+    "longitude": -86.3334,
+    "location": "North Montgomery"
+  },
+  {
+    "type": "Cardiac arrest",
+    "latitude": 32.3992,
+    "longitude": -86.3014,
+    "location": "North Central"
+  },
+  {
+    "type": "Homicide",
+    "latitude": 32.3468,
+    "longitude": -86.3286,
+    "location": "West Montgomery"
+  },
+  {
+    "type": "Chest pain (non-trauma)",
+    "latitude": 32.3218,
+    "longitude": -86.3099,
+    "location": "South Montgomery"
+  }
+]
