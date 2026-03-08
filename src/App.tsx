@@ -104,27 +104,23 @@ function App() {
           <div className="w-full md:w-[420px] bg-slate-50/90 backdrop-blur-md border-r border-slate-200 p-4 shrink-0 z-10 flex flex-col gap-6 overflow-y-auto h-full shadow-lg">
             {!selectedLocation ? (
               <>
-                {analytics && (
-                  <>
-                    <Dashboard
-                      totalIncidents={incidents.length + (analytics?.totalComplaints || 0)}
-                      topTypes={(Object.entries(
-                        incidents.reduce((acc, incident) => {
-                          acc[incident.type] = (acc[incident.type] || 0) + 1;
-                          return acc;
-                        }, { ...(analytics?.byCategory || {}) } as Record<string, number>)
-                      ) as [string, number][]).sort((a, b) => b[1] - a[1]).slice(0, 3)}
-                      risks={risks}
-                    />
-                    <StatusTracker />
-                    <ComplaintDashboard
-                      total={analytics.totalComplaints}
-                      highPriority={complaints.filter(c => c.priority === 'High').length}
-                      categoryCounts={analytics.byCategory}
-                    />
-                    <NewsFeed />
-                  </>
-                )}
+                <Dashboard
+                  totalIncidents={incidents.length + (analytics?.totalComplaints || 0)}
+                  topTypes={(Object.entries(
+                    incidents.reduce((acc, incident) => {
+                      acc[incident.type] = (acc[incident.type] || 0) + 1;
+                      return acc;
+                    }, { ...(analytics?.byCategory || {}) } as Record<string, number>)
+                  ) as [string, number][]).sort((a, b) => b[1] - a[1]).slice(0, 3)}
+                  risks={risks}
+                />
+                <StatusTracker />
+                <ComplaintDashboard
+                  total={analytics?.totalComplaints || 0}
+                  highPriority={complaints.filter(c => c.priority === 'High').length}
+                  categoryCounts={analytics?.byCategory || {}}
+                />
+                <NewsFeed />
               </>
             ) : (
               <ComplaintForm
