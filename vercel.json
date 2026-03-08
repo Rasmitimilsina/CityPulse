@@ -6,10 +6,7 @@
             "use": "@vercel/node",
             "config": {
                 "includeFiles": [
-                    "incidents.json",
-                    "complaints.db",
-                    "news_results.json",
-                    "server/**"
+                    "incidents.json"
                 ]
             }
         },
