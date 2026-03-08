@@ -1,24 +1,41 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import fs from 'fs';
+import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
 import path from 'path';
+import fs from 'fs';
+
+// ESM-safe __dirname (needed because package.json has "type": "module")
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ── Load incidents.json ───────────────────────────────────────────────────────
 let incidents: any[] = [];
-const candidates = [
+const candidatePaths = [
     path.join(process.cwd(), 'incidents.json'),
     path.join(__dirname, '../incidents.json'),
     path.join(__dirname, 'incidents.json'),
 ];
-for (const p of candidates) {
+for (const p of candidatePaths) {
     try {
         if (fs.existsSync(p)) {
             incidents = JSON.parse(fs.readFileSync(p, 'utf-8'));
+            console.log(`[incidents] Loaded ${incidents.length} records from ${p}`);
             break;
         }
     } catch (_) { /* try next */ }
 }
+// Last resort: try require() for bundled builds
+if (incidents.length === 0) {
+    try {
+        const require = createRequire(import.meta.url);
+        incidents = require('../incidents.json');
+        console.log(`[incidents] Loaded via require: ${incidents.length} records`);
+    } catch (e: any) {
+        console.error('[incidents] FAILED to load incidents.json:', e.message);
+    }
+}
 
-// ── In-memory complaints store (Vercel-safe) ─────────────────────────────────
+// ── In-memory complaints store (Vercel-safe, no SQLite) ───────────────────────
 interface Complaint {
     id: string; category: string; type: string; description: string;
     latitude: number; longitude: number; timestamp: number;
@@ -48,7 +65,7 @@ function sendJson(res: VercelResponse, data: any, status = 200) {
     res.status(status).end(JSON.stringify(data));
 }
 
-// ── Static news fallback ──────────────────────────────────────────────────────
+// Static news fallback (execSync-based news fetching doesn't work on Vercel)
 const FALLBACK_NEWS = [
     {
         link: 'https://www.montgomeryadvertiser.com/news/',
@@ -67,7 +84,7 @@ const FALLBACK_NEWS = [
     }
 ];
 
-// ── Main handler ──────────────────────────────────────────────────────────────
+// ── Main Vercel Handler ───────────────────────────────────────────────────────
 export default function handler(req: VercelRequest, res: VercelResponse) {
     // CORS preflight
     if (req.method === 'OPTIONS') {
@@ -77,9 +94,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(204).end();
     }
 
-    const url = req.url || '';
-    // Strip query string for matching
-    const pathname = url.split('?')[0];
+    const pathname = (req.url || '').split('?')[0];
 
     // GET /api/incidents
     if (req.method === 'GET' && pathname === '/api/incidents') {
@@ -103,14 +118,13 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         }
         const result = Object.entries(stats).map(([neighborhood, s]) => {
             const score = calcRisk(s.incidentCount, s.complaintCount, s.severity);
-            const nbhdIncidents = incidents.filter((i: any) => i.location === neighborhood);
-            let centerPosition = [32.3668, -86.3000];
-            if (nbhdIncidents.length > 0) {
-                centerPosition = [
-                    nbhdIncidents.reduce((sum: number, i: any) => sum + i.latitude, 0) / nbhdIncidents.length,
-                    nbhdIncidents.reduce((sum: number, i: any) => sum + i.longitude, 0) / nbhdIncidents.length,
-                ];
-            }
+            const nbhdInc = incidents.filter((i: any) => i.location === neighborhood);
+            const centerPosition = nbhdInc.length > 0
+                ? [
+                    nbhdInc.reduce((sum: number, i: any) => sum + i.latitude, 0) / nbhdInc.length,
+                    nbhdInc.reduce((sum: number, i: any) => sum + i.longitude, 0) / nbhdInc.length,
+                ]
+                : [32.3668, -86.3000];
             return {
                 name: neighborhood,
                 score: Number(score.toFixed(2)),
@@ -141,9 +155,9 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // GET /api/complaints/:id
-    const complaintByIdMatch = pathname.match(/^\/api\/complaints\/([^/]+)$/);
-    if (req.method === 'GET' && complaintByIdMatch) {
-        const c = complaintsStore.find(x => x.id === complaintByIdMatch[1]);
+    const complaintsIdMatch = pathname.match(/^\/api\/complaints\/([^/]+)$/);
+    if (req.method === 'GET' && complaintsIdMatch) {
+        const c = complaintsStore.find(x => x.id === complaintsIdMatch[1]);
         return c ? sendJson(res, c) : sendJson(res, { error: 'Not found' }, 404);
     }
 
@@ -171,14 +185,13 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // PATCH /api/complaints/:id/status
-    const patchStatusMatch = pathname.match(/^\/api\/complaints\/([^/]+)\/status$/);
-    if (req.method === 'PATCH' && patchStatusMatch) {
-        const body = req.body || {};
-        const { status } = body;
+    const patchMatch = pathname.match(/^\/api\/complaints\/([^/]+)\/status$/);
+    if (req.method === 'PATCH' && patchMatch) {
+        const { status } = req.body || {};
         if (!['Pending', 'In Progress', 'Resolved'].includes(status)) {
             return sendJson(res, { error: 'Invalid status' }, 400);
         }
-        const c = complaintsStore.find(x => x.id === patchStatusMatch[1]);
+        const c = complaintsStore.find(x => x.id === patchMatch[1]);
         if (c) { c.status = status; return sendJson(res, { success: true }); }
         return sendJson(res, { error: 'Not found' }, 404);
     }
