@@ -3,12 +3,12 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import Database from 'better-sqlite3';
+import { createRequire } from 'module';
 import { fetchNews } from './newsService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const rootDir = process.env.VERCEL ? '/var/task' : path.resolve(__dirname, '..');
+const require = createRequire(import.meta.url);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,113 +17,99 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Load initial incidents from file
-// Try multiple paths to cover both local and Vercel environments
+// ── Load incidents.json ──────────────────────────────────────────────────────
+// Try several paths so it works locally, on the server, and on Vercel
 let incidents: any[] = [];
-const incidentsPaths = [
+const incidentCandidates = [
     path.join(__dirname, '../incidents.json'),
     path.join(__dirname, 'incidents.json'),
     path.join(process.cwd(), 'incidents.json'),
-    '/var/task/incidents.json',
 ];
-for (const p of incidentsPaths) {
+for (const p of incidentCandidates) {
     try {
         if (fs.existsSync(p)) {
-            const data = fs.readFileSync(p, 'utf8');
-            incidents = JSON.parse(data);
-            console.log(`Loaded incidents from: ${p} (${incidents.length} records)`);
+            incidents = JSON.parse(fs.readFileSync(p, 'utf8'));
+            console.log(`[incidents] Loaded ${incidents.length} records from ${p}`);
             break;
         }
-    } catch (e) {
-        // try next path
-    }
+    } catch (_) { /* try next */ }
 }
 if (incidents.length === 0) {
-    console.error('Could not load incidents.json from any path');
+    // Last resort: try require() which works with bundled files
+    try {
+        incidents = require('../incidents.json');
+        console.log(`[incidents] Loaded via require: ${incidents.length} records`);
+    } catch (e) {
+        console.error('[incidents] FAILED to load incidents.json:', e);
+    }
 }
 
-// Initialize SQLite Database
-// On Vercel, /var/task is read-only. Copy DB to /tmp for writes.
-let dbPath: string;
-const sourcePaths = [
-    path.join(__dirname, '../complaints.db'),
-    path.join(process.cwd(), 'complaints.db'),
-    '/var/task/complaints.db',
-];
-const tmpDbPath = '/tmp/complaints.db';
+// ── In-Memory Complaint Store (Vercel-safe, no native binaries) ──────────────
+interface Complaint {
+    id: string;
+    category: string;
+    type: string;
+    description: string;
+    latitude: number;
+    longitude: number;
+    timestamp: number;
+    priority: string;
+    department: string;
+    status: string;
+    confirmations: number;
+    rejections: number;
+    reporterName: string;
+    reporterPhone: string;
+    reporterEmail: string;
+}
 
-if (process.env.VERCEL) {
-    // On Vercel: copy from bundle to writable /tmp on cold start
-    if (!fs.existsSync(tmpDbPath)) {
-        for (const src of sourcePaths) {
-            if (fs.existsSync(src)) {
-                fs.copyFileSync(src, tmpDbPath);
-                console.log(`Copied DB from ${src} to /tmp`);
-                break;
-            }
+let complaintsStore: Complaint[] = [];
+
+// Try to pre-load existing complaints from SQLite if available (non-Vercel environments)
+try {
+    const { default: Database } = await import('better-sqlite3');
+    const dbCandidates = [
+        path.join(__dirname, '../complaints.db'),
+        path.join(process.cwd(), 'complaints.db'),
+    ];
+    for (const dbPath of dbCandidates) {
+        if (fs.existsSync(dbPath)) {
+            const db = new Database(dbPath, { readonly: true });
+            complaintsStore = db.prepare('SELECT * FROM complaints').all() as Complaint[];
+            db.close();
+            console.log(`[db] Loaded ${complaintsStore.length} complaints from ${dbPath}`);
+            break;
         }
     }
-    dbPath = tmpDbPath;
-} else {
-    // Local development: use the source DB directly
-    dbPath = sourcePaths.find(p => fs.existsSync(p)) || path.join(process.cwd(), 'complaints.db');
+} catch (e: any) {
+    console.warn('[db] better-sqlite3 not available, using in-memory store:', e.message);
 }
 
-const db = new Database(dbPath);
-
-// Create Complaints Table
-db.exec(`
-    CREATE TABLE IF NOT EXISTS complaints (
-        id TEXT PRIMARY KEY,
-        category TEXT,
-        type TEXT,
-        description TEXT,
-        latitude REAL,
-        longitude REAL,
-        timestamp INTEGER,
-        priority TEXT,
-        department TEXT,
-        status TEXT,
-        confirmations INTEGER,
-        rejections INTEGER,
-        reporterName TEXT,
-        reporterPhone TEXT,
-        reporterEmail TEXT
-    )
-`);
-
-// Helper to calculate risk score
+// ── Helper ───────────────────────────────────────────────────────────────────
 const calculateRiskScore = (incidentCount: number, complaintCount: number, severityFactor: number): number => {
-    // Risk Score = (incident_count * 0.5) + (complaints * 0.3) + (severity * 0.2)
     return (incidentCount * 0.5) + (complaintCount * 0.3) + (severityFactor * 0.2);
 };
 
-// --- REST APIs --- //
+// ── API Routes ───────────────────────────────────────────────────────────────
 
 // 1. GET /api/incidents
-app.get('/api/incidents', (req, res) => {
+app.get('/api/incidents', (_req, res) => {
     res.json(incidents);
 });
 
 // 2. POST /api/complaints
 app.post('/api/complaints', (req, res) => {
     const { type, description, latitude, longitude, timestamp } = req.body;
-
-    // In our frontend we pass category instead of type, so we try to map appropriately 
-    // to match the requested API signature where "type" was specified.
-
-    // Generate a short memorable ID (e.g. CP-8A2F) if not mapped from frontend
     const shortId = req.body.id || `CP-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
-    const newComplaint = {
+    const newComplaint: Complaint = {
         id: shortId,
         type: type || req.body.category || 'General',
-        category: req.body.category || type || 'General', // Keep category for consistency with existing UI
+        category: req.body.category || type || 'General',
         description,
         latitude,
         longitude,
         timestamp: timestamp || Date.now(),
-        // Inherited fields from our app's logic since it expects full objects
         priority: req.body.priority || 'Medium',
         department: req.body.department || 'General Services',
         status: req.body.status || 'Pending',
@@ -134,200 +120,115 @@ app.post('/api/complaints', (req, res) => {
         reporterEmail: req.body.reporterEmail || '',
     };
 
-    const stmt = db.prepare(`
-        INSERT INTO complaints (
-            id, category, type, description, latitude, longitude, timestamp, 
-            priority, department, status, confirmations, rejections, 
-            reporterName, reporterPhone, reporterEmail
-        ) VALUES (
-            @id, @category, @type, @description, @latitude, @longitude, @timestamp, 
-            @priority, @department, @status, @confirmations, @rejections, 
-            @reporterName, @reporterPhone, @reporterEmail
-        )
-    `);
-
-    stmt.run(newComplaint);
-
+    complaintsStore.push(newComplaint);
     res.status(201).json(newComplaint);
 });
 
 // 3. GET /api/hotspots
-app.get('/api/hotspots', (req, res) => {
-    const neighborhoodStats: Record<string, { incidentCount: number, complaintCount: number, severity: number }> = {};
+app.get('/api/hotspots', (_req, res) => {
+    const neighborhoodStats: Record<string, { incidentCount: number; complaintCount: number; severity: number }> = {};
 
-    // Aggregate incidents
     incidents.forEach(inc => {
         const nbhd = inc.location;
-        if (!neighborhoodStats[nbhd]) {
-            neighborhoodStats[nbhd] = { incidentCount: 0, complaintCount: 0, severity: 0 };
-        }
+        if (!neighborhoodStats[nbhd]) neighborhoodStats[nbhd] = { incidentCount: 0, complaintCount: 0, severity: 0 };
         neighborhoodStats[nbhd].incidentCount += 1;
-
-        // Basic severity estimation (e.g. violent crimes are higher severity)
-        if (inc.type === 'Assault' || inc.type === 'Robbery') {
-            neighborhoodStats[nbhd].severity += 3;
-        } else {
-            neighborhoodStats[nbhd].severity += 1;
-        }
+        neighborhoodStats[nbhd].severity += (inc.type === 'Assault' || inc.type === 'Robbery') ? 3 : 1;
     });
 
-    // Aggregate complaints from DB
-    const complaints = db.prepare('SELECT * FROM complaints').all() as any[];
-
-    complaints.forEach(cmp => {
-        // Since complaints use exact lat/lng, we assign them to a neighborhood based on a simple radius logic 
-        // or if we had a proper geocoder. For demo, we will find the closest incident's neighborhood.
-        let closestNbhd = "Downtown"; // default
-        let minDistance = Infinity;
-
+    complaintsStore.forEach(cmp => {
+        let closestNbhd = 'Downtown';
+        let minDist = Infinity;
         incidents.forEach(inc => {
-            // Simple pythagorean distance for estimating closest neighborhood cluster
             const dist = Math.sqrt(Math.pow(inc.latitude - cmp.latitude, 2) + Math.pow(inc.longitude - cmp.longitude, 2));
-            if (dist < minDistance) {
-                minDistance = dist;
-                closestNbhd = inc.location;
-            }
+            if (dist < minDist) { minDist = dist; closestNbhd = inc.location; }
         });
-
-        if (!neighborhoodStats[closestNbhd]) {
-            neighborhoodStats[closestNbhd] = { incidentCount: 0, complaintCount: 0, severity: 0 };
-        }
+        if (!neighborhoodStats[closestNbhd]) neighborhoodStats[closestNbhd] = { incidentCount: 0, complaintCount: 0, severity: 0 };
         neighborhoodStats[closestNbhd].complaintCount += 1;
-
-        if (cmp.priority === 'High') {
-            neighborhoodStats[closestNbhd].severity += 2;
-        } else {
-            neighborhoodStats[closestNbhd].severity += 1;
-        }
+        neighborhoodStats[closestNbhd].severity += cmp.priority === 'High' ? 2 : 1;
     });
 
-    // Calculate final scores
     const riskScores = Object.entries(neighborhoodStats).map(([neighborhood, stats]) => {
         const score = calculateRiskScore(stats.incidentCount, stats.complaintCount, stats.severity);
-
-        let riskLevel = 'Low';
-        if (score > 15) riskLevel = 'High';
-        else if (score > 5) riskLevel = 'Medium';
-
-        // calculate center
+        let riskLevel = score > 15 ? 'High' : score > 5 ? 'Medium' : 'Low';
         const incidentsInNbhd = incidents.filter(i => i.location === neighborhood);
-        let centerPosition = [32.3668, -86.3000]; // default
+        let centerPosition = [32.3668, -86.3000];
         if (incidentsInNbhd.length > 0) {
             const avgLat = incidentsInNbhd.reduce((sum, inc) => sum + inc.latitude, 0) / incidentsInNbhd.length;
             const avgLng = incidentsInNbhd.reduce((sum, inc) => sum + inc.longitude, 0) / incidentsInNbhd.length;
             centerPosition = [avgLat, avgLng];
         }
-
-        return {
-            name: neighborhood,
-            score: Number(score.toFixed(2)),
-            count: stats.incidentCount + stats.complaintCount,
-            level: riskLevel,
-            centerPosition
-        };
+        return { name: neighborhood, score: Number(score.toFixed(2)), count: stats.incidentCount + stats.complaintCount, level: riskLevel, centerPosition };
     });
 
     res.json(riskScores);
 });
 
 // 4. GET /api/analytics
-app.get('/api/analytics', (req, res) => {
-    // Fetch all complaints from SQLite
-    const complaints = db.prepare('SELECT * FROM complaints').all() as any[];
-
-    // Total complaints
-    const totalComplaints = complaints.length;
-
-    // Complaints by category
-    const byCategory = complaints.reduce((acc, cmp) => {
+app.get('/api/analytics', (_req, res) => {
+    const totalComplaints = complaintsStore.length;
+    const byCategory = complaintsStore.reduce((acc, cmp) => {
         const cat = cmp.category || cmp.type;
         acc[cat] = (acc[cat] || 0) + 1;
         return acc;
     }, {} as Record<string, number>);
 
-    // Complaints by neighborhood (using the same estimation logic as above)
     const byNeighborhood: Record<string, number> = {};
-    complaints.forEach(cmp => {
-        let closestNbhd = "Downtown";
-        let minDistance = Infinity;
-
+    complaintsStore.forEach(cmp => {
+        let closestNbhd = 'Downtown';
+        let minDist = Infinity;
         incidents.forEach(inc => {
             const dist = Math.sqrt(Math.pow(inc.latitude - cmp.latitude, 2) + Math.pow(inc.longitude - cmp.longitude, 2));
-            if (dist < minDistance) {
-                minDistance = dist;
-                closestNbhd = inc.location;
-            }
+            if (dist < minDist) { minDist = dist; closestNbhd = inc.location; }
         });
-
         byNeighborhood[closestNbhd] = (byNeighborhood[closestNbhd] || 0) + 1;
     });
 
-    res.json({
-        totalComplaints,
-        byCategory,
-        byNeighborhood
-    });
+    res.json({ totalComplaints, byCategory, byNeighborhood });
 });
 
 // 5. GET /api/departments/:name/complaints
 app.get('/api/departments/:name/complaints', (req, res) => {
-    const departmentName = decodeURIComponent(req.params.name);
-    try {
-        const deptComplaints = db.prepare('SELECT * FROM complaints WHERE department = ?').all(departmentName);
-        res.json(deptComplaints);
-    } catch (error) {
-        res.status(500).json({ error: 'Database error fetching department complaints' });
-    }
+    const dept = decodeURIComponent(req.params.name);
+    res.json(complaintsStore.filter(c => c.department === dept));
 });
 
 // 6. PATCH /api/complaints/:id/status
 app.patch('/api/complaints/:id/status', (req, res) => {
-    const complaintId = req.params.id;
+    const { id } = req.params;
     const { status } = req.body;
-
     if (!['Pending', 'In Progress', 'Resolved'].includes(status)) {
         return res.status(400).json({ error: 'Invalid status' });
     }
-
-    try {
-        const stmt = db.prepare('UPDATE complaints SET status = ? WHERE id = ?');
-        const info = stmt.run(status, complaintId);
-
-        if (info.changes > 0) {
-            res.json({ success: true, id: complaintId, status });
-        } else {
-            res.status(404).json({ error: 'Complaint not found' });
-        }
-    } catch (error) {
-        res.status(500).json({ error: 'Database error updating status' });
+    const complaint = complaintsStore.find(c => c.id === id);
+    if (complaint) {
+        complaint.status = status;
+        res.json({ success: true, id, status });
+    } else {
+        res.status(404).json({ error: 'Complaint not found' });
     }
 });
 
 // 7. GET /api/complaints/:id
 app.get('/api/complaints/:id', (req, res) => {
-    const { id } = req.params;
-    try {
-        const complaint = db.prepare('SELECT * FROM complaints WHERE id = ?').get(id);
-        if (complaint) {
-            res.json(complaint);
-        } else {
-            res.status(404).json({ error: 'Complaint not found' });
-        }
-    } catch (error) {
-        res.status(500).json({ error: 'Database error fetching complaint' });
+    const complaint = complaintsStore.find(c => c.id === req.params.id);
+    if (complaint) {
+        res.json(complaint);
+    } else {
+        res.status(404).json({ error: 'Complaint not found' });
     }
 });
 
 // 8. GET /api/news
-app.get('/api/news', async (req, res) => {
+app.get('/api/news', async (_req, res) => {
     try {
         const news = await fetchNews();
         res.json(news);
-    } catch (error) {
+    } catch {
         res.status(500).json({ error: 'Failed to fetch news' });
     }
 });
 
+// ── Start (local dev only) ────────────────────────────────────────────────────
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`CityPulse API Server running on http://localhost:${PORT}`);
