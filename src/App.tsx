@@ -113,7 +113,7 @@ function App() {
             {!selectedLocation ? (
               <>
                 <Dashboard
-                  totalIncidents={incidents.length + (analytics?.totalComplaints || 0)}
+                  totalIncidents={incidents.length + complaints.length}
                   topTypes={(Object.entries(
                     incidents.reduce((acc, incident) => {
                       acc[incident.type] = (acc[incident.type] || 0) + 1;
@@ -122,11 +122,14 @@ function App() {
                   ) as [string, number][]).sort((a, b) => b[1] - a[1]).slice(0, 3)}
                   risks={risks}
                 />
-                <StatusTracker />
+                <StatusTracker complaints={complaints} />
                 <ComplaintDashboard
-                  total={analytics?.totalComplaints || 0}
+                  total={complaints.length}
                   highPriority={complaints.filter(c => c.priority === 'High').length}
-                  categoryCounts={analytics?.byCategory || {}}
+                  categoryCounts={complaints.reduce((acc, c) => {
+                    acc[c.category] = (acc[c.category] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>)}
                 />
                 <NewsFeed />
               </>

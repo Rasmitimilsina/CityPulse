@@ -2,31 +2,30 @@ import React, { useState } from 'react';
 import { Search, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { Complaint } from '../utils/complaints';
 
-export function StatusTracker() {
+interface StatusTrackerProps {
+    complaints: Complaint[];
+}
+
+export function StatusTracker({ complaints }: StatusTrackerProps) {
     const [searchId, setSearchId] = useState('');
     const [complaint, setComplaint] = useState<Complaint | null>(null);
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
 
-    const handleSearch = async (e: React.FormEvent) => {
+    const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!searchId.trim()) return;
+        const trimmed = searchId.trim();
+        if (!trimmed) return;
 
-        setLoading(true);
-        setError('');
-        try {
-            const res = await fetch(`/api/complaints/${searchId.trim()}`);
-            if (!res.ok) {
-                if (res.status === 404) throw new Error('Complaint ID not found');
-                throw new Error('Error fetching complaint');
-            }
-            const data = await res.json();
-            setComplaint(data);
-        } catch (err: any) {
+        // Search locally in React state — no API call needed (Vercel functions are ephemeral)
+        const found = complaints.find(
+            c => c.id.toLowerCase() === trimmed.toLowerCase()
+        );
+        if (found) {
+            setComplaint(found);
+            setError('');
+        } else {
             setComplaint(null);
-            setError(err.message);
-        } finally {
-            setLoading(false);
+            setError('Complaint ID not found. Make sure you are using the exact tracking ID shown after submission.');
         }
     };
 
@@ -47,10 +46,9 @@ export function StatusTracker() {
                 />
                 <button
                     type="submit"
-                    disabled={loading}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
                 >
-                    {loading ? '...' : 'Track'}
+                    Track
                 </button>
             </form>
 
