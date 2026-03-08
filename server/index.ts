@@ -8,27 +8,67 @@ import { fetchNews } from './newsService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const rootDir = process.cwd();
+const rootDir = process.env.VERCEL ? '/var/task' : path.resolve(__dirname, '..');
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
 // Load initial incidents from file
-const incidentsPath = path.join(rootDir, 'incidents.json');
+// Try multiple paths to cover both local and Vercel environments
 let incidents: any[] = [];
-try {
-    const data = fs.readFileSync(incidentsPath, 'utf8');
-    incidents = JSON.parse(data);
-} catch (error) {
-    console.error("Error reading incidents.json:", error);
+const incidentsPaths = [
+    path.join(__dirname, '../incidents.json'),
+    path.join(__dirname, 'incidents.json'),
+    path.join(process.cwd(), 'incidents.json'),
+    '/var/task/incidents.json',
+];
+for (const p of incidentsPaths) {
+    try {
+        if (fs.existsSync(p)) {
+            const data = fs.readFileSync(p, 'utf8');
+            incidents = JSON.parse(data);
+            console.log(`Loaded incidents from: ${p} (${incidents.length} records)`);
+            break;
+        }
+    } catch (e) {
+        // try next path
+    }
+}
+if (incidents.length === 0) {
+    console.error('Could not load incidents.json from any path');
 }
 
 // Initialize SQLite Database
-const dbPath = path.join(rootDir, 'complaints.db');
+// On Vercel, /var/task is read-only. Copy DB to /tmp for writes.
+let dbPath: string;
+const sourcePaths = [
+    path.join(__dirname, '../complaints.db'),
+    path.join(process.cwd(), 'complaints.db'),
+    '/var/task/complaints.db',
+];
+const tmpDbPath = '/tmp/complaints.db';
+
+if (process.env.VERCEL) {
+    // On Vercel: copy from bundle to writable /tmp on cold start
+    if (!fs.existsSync(tmpDbPath)) {
+        for (const src of sourcePaths) {
+            if (fs.existsSync(src)) {
+                fs.copyFileSync(src, tmpDbPath);
+                console.log(`Copied DB from ${src} to /tmp`);
+                break;
+            }
+        }
+    }
+    dbPath = tmpDbPath;
+} else {
+    // Local development: use the source DB directly
+    dbPath = sourcePaths.find(p => fs.existsSync(p)) || path.join(process.cwd(), 'complaints.db');
+}
+
 const db = new Database(dbPath);
 
 // Create Complaints Table
