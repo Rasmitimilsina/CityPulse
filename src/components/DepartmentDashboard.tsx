@@ -22,7 +22,7 @@ export function DepartmentDashboard({ department }: DepartmentDashboardProps) {
     const [filter, setFilter] = useState<ComplaintStatus | 'All'>('All');
 
     const fetchComplaints = () => {
-        fetch(`http://localhost:3001/api/departments/${encodeURIComponent(department)}/complaints`)
+        fetch(`/api/departments/${encodeURIComponent(department)}/complaints`)
             .then(res => res.json())
             .then(data => setComplaints(data))
             .catch(err => console.error("Error fetching department complaints:", err));
@@ -37,7 +37,7 @@ export function DepartmentDashboard({ department }: DepartmentDashboardProps) {
 
     const handleStatusUpdate = async (id: string, newStatus: ComplaintStatus) => {
         try {
-            await fetch(`http://localhost:3001/api/complaints/${id}/status`, {
+            await fetch(`/api/complaints/${id}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
@@ -67,8 +67,8 @@ export function DepartmentDashboard({ department }: DepartmentDashboardProps) {
                                     <div className="flex justify-between items-start mb-2">
                                         <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">{complaint.category}</span>
                                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${complaint.priority === 'High' ? 'bg-red-100 text-red-600' :
-                                                complaint.priority === 'Medium' ? 'bg-amber-100 text-amber-600' :
-                                                    'bg-emerald-100 text-emerald-600'
+                                            complaint.priority === 'Medium' ? 'bg-amber-100 text-amber-600' :
+                                                'bg-emerald-100 text-emerald-600'
                                             }`}>{complaint.priority} Priority</span>
                                     </div>
                                     <p className="text-sm text-slate-600 mb-2 leading-snug">{complaint.description}</p>
@@ -115,8 +115,8 @@ export function DepartmentDashboard({ department }: DepartmentDashboardProps) {
                                             <span className="text-[10px] text-slate-400 font-mono">#{complaint.id.split('-')[1]}</span>
                                         </div>
                                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${complaint.priority === 'High' ? 'bg-red-100 text-red-600' :
-                                                complaint.priority === 'Medium' ? 'bg-amber-100 text-amber-600' :
-                                                    'bg-emerald-100 text-emerald-600'
+                                            complaint.priority === 'Medium' ? 'bg-amber-100 text-amber-600' :
+                                                'bg-emerald-100 text-emerald-600'
                                             }`}>{complaint.priority}</span>
                                     </div>
 
@@ -127,8 +127,8 @@ export function DepartmentDashboard({ department }: DepartmentDashboardProps) {
                                                 key={status}
                                                 onClick={() => handleStatusUpdate(complaint.id, status)}
                                                 className={`p-1.5 rounded transition-colors ${complaint.status === status
-                                                        ? (status === 'Pending' ? 'bg-amber-100 text-amber-700' : status === 'In Progress' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700')
-                                                        : 'text-slate-400 hover:bg-slate-200'
+                                                    ? (status === 'Pending' ? 'bg-amber-100 text-amber-700' : status === 'In Progress' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700')
+                                                    : 'text-slate-400 hover:bg-slate-200'
                                                     }`}
                                                 title={`Mark as ${status}`}
                                             >

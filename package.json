@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
+    "build:server": "tsc server/index.ts --esModuleInterop --skipLibCheck",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

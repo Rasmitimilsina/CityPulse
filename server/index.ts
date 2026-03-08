@@ -8,6 +8,7 @@ import { fetchNews } from './newsService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const rootDir = process.cwd();
 
 const app = express();
 const PORT = 3001;
@@ -17,7 +18,7 @@ app.use(cors());
 app.use(express.json());
 
 // Load initial incidents from file
-const incidentsPath = path.join(__dirname, '../incidents.json');
+const incidentsPath = path.join(rootDir, 'incidents.json');
 let incidents: any[] = [];
 try {
     const data = fs.readFileSync(incidentsPath, 'utf8');
@@ -27,7 +28,7 @@ try {
 }
 
 // Initialize SQLite Database
-const dbPath = path.join(__dirname, '../complaints.db');
+const dbPath = path.join(rootDir, 'complaints.db');
 const db = new Database(dbPath);
 
 // Create Complaints Table
@@ -287,6 +288,10 @@ app.get('/api/news', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`CityPulse API Server running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`CityPulse API Server running on http://localhost:${PORT}`);
+    });
+}
+
+export default app;

@@ -14,7 +14,7 @@ import { NewsFeed } from './components/NewsFeed';
 
 const initialIncidents = incidentsData as Incident[];
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = '/api';
 
 function App() {
   const [incidents, setIncidents] = useState<Incident[]>([]);

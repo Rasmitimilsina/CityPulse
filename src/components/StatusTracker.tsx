@@ -15,7 +15,7 @@ export function StatusTracker() {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch(`http://localhost:3001/api/complaints/${searchId.trim()}`);
+            const res = await fetch(`/api/complaints/${searchId.trim()}`);
             if (!res.ok) {
                 if (res.status === 404) throw new Error('Complaint ID not found');
                 throw new Error('Error fetching complaint');
@@ -78,8 +78,8 @@ export function StatusTracker() {
                             {/* Pending Step */}
                             <div className="relative z-10 flex flex-col items-center flex-1">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 transition-colors ${['Pending', 'In Progress', 'Resolved'].includes(complaint.status)
-                                        ? 'bg-indigo-600 text-white shadow-sm ring-4 ring-slate-50'
-                                        : 'bg-white border-2 border-slate-200 text-slate-300'
+                                    ? 'bg-indigo-600 text-white shadow-sm ring-4 ring-slate-50'
+                                    : 'bg-white border-2 border-slate-200 text-slate-300'
                                     }`}>
                                     <AlertCircle className="w-4 h-4" />
                                 </div>
@@ -89,8 +89,8 @@ export function StatusTracker() {
                             {/* In Progress Step */}
                             <div className="relative z-10 flex flex-col items-center flex-1">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 transition-colors ${['In Progress', 'Resolved'].includes(complaint.status)
-                                        ? 'bg-blue-500 text-white shadow-sm ring-4 ring-slate-50'
-                                        : 'bg-white border-2 border-slate-200 text-slate-300'
+                                    ? 'bg-blue-500 text-white shadow-sm ring-4 ring-slate-50'
+                                    : 'bg-white border-2 border-slate-200 text-slate-300'
                                     }`}>
                                     <Clock className="w-4 h-4" />
                                 </div>
@@ -100,8 +100,8 @@ export function StatusTracker() {
                             {/* Resolved Step */}
                             <div className="relative z-10 flex flex-col items-center flex-1">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 transition-colors ${complaint.status === 'Resolved'
-                                        ? 'bg-emerald-500 text-white shadow-sm ring-4 ring-slate-50'
-                                        : 'bg-white border-2 border-slate-200 text-slate-300'
+                                    ? 'bg-emerald-500 text-white shadow-sm ring-4 ring-slate-50'
+                                    : 'bg-white border-2 border-slate-200 text-slate-300'
                                     }`}>
                                     <CheckCircle2 className="w-4 h-4" />
                                 </div>
