@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Department, Complaint, ComplaintStatus } from '../utils/complaints';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -6,6 +6,8 @@ import { CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 
 interface DepartmentDashboardProps {
     department: Department;
+    complaints: Complaint[];
+    onStatusUpdate?: (id: string, newStatus: ComplaintStatus) => void;
 }
 
 const customIcon = new L.Icon({
@@ -17,23 +19,10 @@ const customIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
-export function DepartmentDashboard({ department }: DepartmentDashboardProps) {
-    const [complaints, setComplaints] = useState<Complaint[]>([]);
+export function DepartmentDashboard({ department, complaints: allComplaints, onStatusUpdate }: DepartmentDashboardProps) {
+    // Filter complaints for this department from parent state (no API call needed)
+    const complaints = allComplaints.filter(c => c.department === department);
     const [filter, setFilter] = useState<ComplaintStatus | 'All'>('All');
-
-    const fetchComplaints = () => {
-        fetch(`/api/departments/${encodeURIComponent(department)}/complaints`)
-            .then(res => res.json())
-            .then(data => setComplaints(data))
-            .catch(err => console.error("Error fetching department complaints:", err));
-    };
-
-    useEffect(() => {
-        fetchComplaints();
-        // Poll every 5s for real-time updates
-        const interval = setInterval(fetchComplaints, 5000);
-        return () => clearInterval(interval);
-    }, [department]);
 
     const handleStatusUpdate = async (id: string, newStatus: ComplaintStatus) => {
         try {
@@ -42,11 +31,11 @@ export function DepartmentDashboard({ department }: DepartmentDashboardProps) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
             });
-            // Optimistic update
-            setComplaints(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c));
         } catch (error) {
             console.error("Error updating status:", error);
         }
+        // Always update parent state (works even if API fails on Vercel)
+        onStatusUpdate?.(id, newStatus);
     };
 
     const filteredComplaints = filter === 'All' ? complaints : complaints.filter(c => c.status === filter);

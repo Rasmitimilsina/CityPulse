@@ -90,13 +90,21 @@ function App() {
     ));
   };
 
+  const handleDepartmentStatusUpdate = (id: string, newStatus: Complaint['status'] | any) => {
+    setComplaints(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c));
+  };
+
   return (
     <div className="h-screen w-full bg-slate-50 overflow-hidden flex flex-col font-sans">
       <Header onSelectDepartment={setActiveDepartment} currentDepartment={activeDepartment} />
 
       {activeDepartment ? (
         <div className="flex-1 w-full h-full relative overflow-hidden">
-          <DepartmentDashboard department={activeDepartment} />
+          <DepartmentDashboard
+            department={activeDepartment}
+            complaints={complaints}
+            onStatusUpdate={handleDepartmentStatusUpdate}
+          />
         </div>
       ) : (
         <div className="flex-1 relative flex flex-col md:flex-row overflow-hidden">
