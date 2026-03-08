@@ -66,24 +66,27 @@ interface Complaint {
 let complaintsStore: Complaint[] = [];
 
 // Try to pre-load existing complaints from SQLite if available (non-Vercel environments)
-try {
-    const { default: Database } = await import('better-sqlite3');
-    const dbCandidates = [
-        path.join(__dirname, '../complaints.db'),
-        path.join(process.cwd(), 'complaints.db'),
-    ];
-    for (const dbPath of dbCandidates) {
-        if (fs.existsSync(dbPath)) {
-            const db = new Database(dbPath, { readonly: true });
-            complaintsStore = db.prepare('SELECT * FROM complaints').all() as Complaint[];
-            db.close();
-            console.log(`[db] Loaded ${complaintsStore.length} complaints from ${dbPath}`);
-            break;
+// Wrapped in async IIFE to avoid top-level await crashing the Vercel serverless function
+(async () => {
+    try {
+        const { default: Database } = await import('better-sqlite3');
+        const dbCandidates = [
+            path.join(__dirname, '../complaints.db'),
+            path.join(process.cwd(), 'complaints.db'),
+        ];
+        for (const dbPath of dbCandidates) {
+            if (fs.existsSync(dbPath)) {
+                const db = new Database(dbPath, { readonly: true });
+                complaintsStore = db.prepare('SELECT * FROM complaints').all() as Complaint[];
+                db.close();
+                console.log(`[db] Loaded ${complaintsStore.length} complaints from ${dbPath}`);
+                break;
+            }
         }
+    } catch (e: any) {
+        console.warn('[db] better-sqlite3 not available, using in-memory store:', e.message);
     }
-} catch (e: any) {
-    console.warn('[db] better-sqlite3 not available, using in-memory store:', e.message);
-}
+})();
 
 // ── Helper ───────────────────────────────────────────────────────────────────
 const calculateRiskScore = (incidentCount: number, complaintCount: number, severityFactor: number): number => {
