@@ -5,7 +5,7 @@ import path from "path";
 // Keep a simple cache
 let cachedNews: any = null;
 let lastFetchTime: number = 0;
-const CACHE_DURATION_MS = 60 * 1000; // 1 minute
+const CACHE_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 
 export async function fetchNews() {
     const now = Date.now();
@@ -17,7 +17,7 @@ export async function fetchNews() {
         console.log("Spawning isolated fetch_news.mjs...");
         // Run the script synchronously. Safe because it finishes in ~3 seconds and runs infrequently
         const scriptPath = path.resolve(process.cwd(), "fetch_news.mjs");
-        execSync(`node ${scriptPath}`, { stdio: 'inherit' });
+        execSync(`node ${scriptPath}`, { stdio: 'inherit', timeout: 60000 });
 
         const resultsPath = path.resolve(process.cwd(), "news_results.json");
         if (fs.existsSync(resultsPath)) {

@@ -9,8 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
-    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function () { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function () { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -46,7 +46,7 @@ var path_1 = __importDefault(require("path"));
 // Keep a simple cache
 var cachedNews = null;
 var lastFetchTime = 0;
-var CACHE_DURATION_MS = 60 * 1000; // 1 minute
+var CACHE_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 function fetchNews() {
     return __awaiter(this, void 0, void 0, function () {
         var now, scriptPath, resultsPath, rawData, result, textResponse, parsed;
@@ -58,7 +58,7 @@ function fetchNews() {
             try {
                 console.log("Spawning isolated fetch_news.mjs...");
                 scriptPath = path_1.default.resolve(process.cwd(), "fetch_news.mjs");
-                (0, child_process_1.execSync)("node ".concat(scriptPath), { stdio: 'inherit' });
+                (0, child_process_1.execSync)("node ".concat(scriptPath), { stdio: 'inherit', timeout: 60000 });
                 resultsPath = path_1.default.resolve(process.cwd(), "news_results.json");
                 if (fs_1.default.existsSync(resultsPath)) {
                     rawData = fs_1.default.readFileSync(resultsPath, "utf-8");

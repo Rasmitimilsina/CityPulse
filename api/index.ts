@@ -3,6 +3,7 @@ import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'fs';
+import https from 'https';
 
 // ESM-safe __dirname (needed because package.json has "type": "module")
 const __filename = fileURLToPath(import.meta.url);
@@ -65,24 +66,87 @@ function sendJson(res: VercelResponse, data: any, status = 200) {
     res.status(status).end(JSON.stringify(data));
 }
 
-// Static news fallback (execSync-based news fetching doesn't work on Vercel)
-const FALLBACK_NEWS = [
-    {
-        link: 'https://www.montgomeryadvertiser.com/news/',
-        title: 'Local and River Region News - The Montgomery Advertiser',
-        description: 'Local news and events for Montgomery Alabama and the River Region.'
-    },
-    {
-        link: 'https://www.wsfa.com/',
-        title: 'Montgomery Area News - WSFA 12 News',
-        description: 'Breaking news, weather, sports for Montgomery, Alabama and surrounding areas.'
-    },
-    {
-        link: 'https://www.al.com/news/montgomery/',
-        title: 'Montgomery News - AL.com',
-        description: 'Latest Montgomery news, crime, weather, and community updates from AL.com.'
-    }
+// ── News helpers (RSS-based, works on Vercel serverless) ─────────────────────
+const STATIC_NEWS_FALLBACK = [
+    { link: 'https://www.montgomeryadvertiser.com/news/', title: 'Local and River Region News - The Montgomery Advertiser', description: 'Local news and events for Montgomery Alabama and the River Region.' },
+    { link: 'https://www.wsfa.com/', title: 'Montgomery Area News - WSFA 12 News', description: 'Breaking news, weather, sports for Montgomery, Alabama and surrounding areas.' },
+    { link: 'https://www.al.com/news/montgomery/', title: 'Montgomery News - AL.com', description: 'Latest Montgomery news, crime, weather, and community updates from AL.com.' },
+    { link: 'https://www.montgomeryal.gov/Home/Components/News/News/4800/16', title: 'Montgomery Continues Progress on Public Safety', description: 'Mayor Reed shared year-end public safety data and announced new recruitment incentives.' },
 ];
+
+let newsCache: { items: any[]; fetchedAt: number } | null = null;
+const NEWS_CACHE_MS = 5 * 60 * 1000; // 5 minutes
+
+function decodeHtml(str: string): string {
+    const decode = (s: string) => s
+        .replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ');
+    return decode(decode(str));
+}
+
+function stripTags(str: string): string {
+    return str.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function parseRSS(xml: string): any[] {
+    const items: any[] = [];
+    const re = /<item>([\s\S]*?)<\/item>/g;
+    let m;
+    while ((m = re.exec(xml)) !== null && items.length < 10) {
+        const block = m[1];
+        const titleM = block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/) || block.match(/<title>([\s\S]*?)<\/title>/);
+        const descRaw = (block.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/) || block.match(/<description>([\s\S]*?)<\/description>/) || [])[1] || '';
+        const descDecoded = decodeHtml(descRaw);
+        const sourceAttr = block.match(/<source[^>]+url="(https?:\/\/[^"]+)"/);
+        const descLink = descDecoded.match(/href="(https?:\/\/(?!news\.google)[^"]+)"/);
+        const googleLink = block.match(/<link>([\s\S]*?)<\/link>/);
+        const link = sourceAttr ? sourceAttr[1] : descLink ? descLink[1] : (googleLink ? googleLink[1].trim() : '');
+        const desc = stripTags(descDecoded).replace(/Read more\.?/gi, '').trim().substring(0, 220);
+        if (titleM && link) {
+            items.push({ link, title: decodeHtml(titleM[1]).trim(), description: desc || 'Click to read the full article.' });
+        }
+    }
+    return items;
+}
+
+async function fetchLiveNews(): Promise<any[]> {
+    if (newsCache && Date.now() - newsCache.fetchedAt < NEWS_CACHE_MS) {
+        return newsCache.items;
+    }
+    return new Promise((resolve) => {
+        const query = encodeURIComponent('Montgomery Alabama city news');
+        const req = https.request({
+            hostname: 'news.google.com',
+            path: `/rss/search?q=${query}&hl=en-US&gl=US&ceid=US:en`,
+            method: 'GET',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (compatible; CityPulse/1.0)',
+                'Accept': 'application/rss+xml, text/xml, */*',
+            },
+            timeout: 10000,
+        }, (res) => {
+            let data = '';
+            res.on('data', (c: Buffer) => { data += c; });
+            res.on('end', () => {
+                try {
+                    const items = parseRSS(data);
+                    if (items.length > 0) {
+                        newsCache = { items, fetchedAt: Date.now() };
+                        resolve(items);
+                    } else {
+                        resolve(STATIC_NEWS_FALLBACK);
+                    }
+                } catch {
+                    resolve(STATIC_NEWS_FALLBACK);
+                }
+            });
+        });
+        req.on('timeout', () => { req.destroy(); resolve(STATIC_NEWS_FALLBACK); });
+        req.on('error', () => resolve(STATIC_NEWS_FALLBACK));
+        req.end();
+    });
+}
 
 // ── Main Vercel Handler ───────────────────────────────────────────────────────
 export default function handler(req: VercelRequest, res: VercelResponse) {
@@ -149,9 +213,12 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         return sendJson(res, { totalComplaints: complaintsStore.length, byCategory, byNeighborhood });
     }
 
-    // GET /api/news
+    // GET /api/news — live Google News RSS with graceful fallback
     if (req.method === 'GET' && pathname === '/api/news') {
-        return sendJson(res, FALLBACK_NEWS);
+        fetchLiveNews()
+            .then((items) => sendJson(res, items))
+            .catch(() => sendJson(res, STATIC_NEWS_FALLBACK));
+        return;
     }
 
     // GET /api/complaints/:id
